@@ -6,29 +6,34 @@ namespace ToDo.Controllers {
     [ApiController]
     public class HomeController : ControllerBase{
         [HttpGet("/")]
-        public List<TodoModel> Get([FromServices] AppDBContext contexto){
-            return contexto.Todos.ToList();
-        }
+        public IActionResult Get([FromServices] AppDBContext contexto)
+            => Ok(contexto.Todos.ToList());
+        
 
         [HttpGet("/{id:int}")]
-        public TodoModel GetById([FromRoute] int id, [FromServices] AppDBContext contexto){
-            return contexto.Todos.FirstOrDefault(x => x.Id == id);
+        public IActionResult GetById([FromRoute] int id, [FromServices] AppDBContext contexto){
+            var todos = contexto.Todos.FirstOrDefault(x => x.Id == id);
+            if (todos == null)
+                return NotFound();
+
+            return Ok(todos);
         }
+        
 
         [HttpPost("/")]
-        public TodoModel Post([FromBody] TodoModel todo, [FromServices] AppDBContext contexto) {
+        public IActionResult Post([FromBody] TodoModel todo, [FromServices] AppDBContext contexto) {
             contexto.Todos.Add(todo);
             contexto.SaveChanges();
             
-            return todo;
+            return Created($"{todo.Id}", todo);
         }
         
         [HttpPut("/{id:int}")]
-        public TodoModel Put([FromRoute] int id, [FromBody] TodoModel todo, [FromServices] AppDBContext contexto) {
+        public IActionResult Put([FromRoute] int id, [FromBody] TodoModel todo, [FromServices] AppDBContext contexto) {
             var model = contexto.Todos.FirstOrDefault(x => x.Id == id);
 
             if (model == null) 
-                return todo;
+                return NotFound();
 
             model.Titulo = todo.Titulo;
             model.Pronta = todo.Pronta;
@@ -36,17 +41,20 @@ namespace ToDo.Controllers {
             contexto.Todos.Update(model);
             contexto.SaveChanges();
 
-            return model;
+            return Ok(model);
         }
 
         [HttpDelete("/{id:int}")]
-        public TodoModel Delete([FromRoute] int id, [FromServices] AppDBContext contexto) {
+        public IActionResult Delete([FromRoute] int id, [FromServices] AppDBContext contexto) {
             var model = contexto.Todos.FirstOrDefault(x => x.Id == id);
+
+            if (model == null)
+                return NotFound();
 
             contexto.Todos.Remove(model);
             contexto.SaveChanges();
 
-            return model;
+            return Ok(model);
         }
     }
 }
